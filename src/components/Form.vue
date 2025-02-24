@@ -40,12 +40,20 @@
 
           <b-col sm="12" md="6" lg="3" v-if="newAccount.type === 'Локальная'">
             <b-form-group label="Пароль">
-              <b-form-input
-                v-model="newAccount.password"
-                :state="isValid(newAccount.password, 'password')"
-                placeholder="Пароль"
-                type="password"
-              />
+              <div class="password-input-container">
+                <b-form-input
+                  v-model="newAccount.password"
+                  :state="isValid(newAccount.password, 'password')"
+                  placeholder="Пароль"
+                  :type="passwordVisible ? 'text' : 'password'"
+                />
+                <i
+                  class="bi"
+                  :class="passwordVisible ? 'bi-eye-slash' : 'bi-eye'"
+                  @click="togglePasswordVisibility"
+                  aria-hidden="true"
+                ></i>
+              </div>
             </b-form-group>
           </b-col>
 
@@ -85,7 +93,14 @@
 
           <b-col sm="12" md="6" lg="3" v-if="account.type === 'Локальная'">
             <b-form-group label="Пароль">
-              <b-form-input v-model="account.password" placeholder="Пароль" type="password" readonly />
+              <div class="password-input-container">
+                <b-form-input
+                  v-model="account.password"
+                  placeholder="Пароль"
+                  type="password"
+                  readonly
+                />
+              </div>
             </b-form-group>
           </b-col>
 
@@ -125,6 +140,8 @@ const newAccount = ref<Account>({
   login: '',
   password: '',
 });
+
+const passwordVisible = ref(false);
 
 const toggleForm = () => {
   showForm.value = !showForm.value;
@@ -171,13 +188,23 @@ const isFormValid = computed(() => {
     (newAccount.value.type !== 'Локальная' || isValid(newAccount.value.password, 'password'))
   );
 });
+
+const togglePasswordVisibility = () => {
+  passwordVisible.value = !passwordVisible.value;
+};
 </script>
 
 <style scoped>
-.mt-2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.password-input-container {
+  position: relative;
+}
+
+.password-input-container .bi {
+  position: absolute;
+  top: 50%;
+  right: 30px;
+  transform: translateY(-50%);
+  cursor: pointer;
 }
 
 .message {
@@ -185,44 +212,6 @@ const isFormValid = computed(() => {
   border: 1px solid #ddd;
   padding: 10px;
   border-radius: 5px;
-  max-width: 50vw;
   margin-bottom: 5px;
-}
-
-span {
-  font-size: 14px;
-  color: #555;
-}
-
-i {
-  font-size: 18px;
-  color: #007bff;
-}
-
-@media (max-width: 768px) {
-  .message {
-    font-size: 12px;
-    padding: 8px;
-  }
-}
-
-@media (max-width: 425px) {
-  .message {
-    font-size: 10px;
-    padding: 6px;
-  }
-  h1 {
-    font-size: 18px;
-  }
-}
-
-@media (max-width: 768px) {
-  .b-row {
-    display: block;
-  }
-  .b-col {
-    width: 100%;
-    margin-bottom: 15px;
-  }
 }
 </style>
