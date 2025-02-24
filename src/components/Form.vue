@@ -11,8 +11,8 @@
             Для указания нескольких меток для одной пары логин/пароль используйте разделитель ;
           </span>
         </div>
-        <b-row>
-          <b-col>
+        <b-row class="g-3">
+          <b-col sm="12" md="6" lg="3">
             <b-form-group label="Метка">
               <b-form-input
                 v-model="newAccount.label"
@@ -22,13 +22,13 @@
             </b-form-group>
           </b-col>
 
-          <b-col>
+          <b-col sm="12" md="6" lg="3">
             <b-form-group label="Тип записи">
               <b-form-select v-model="newAccount.type" :options="accountTypes" />
             </b-form-group>
           </b-col>
 
-          <b-col>
+          <b-col sm="12" md="6" lg="3">
             <b-form-group label="Логин">
               <b-form-input
                 v-model="newAccount.login"
@@ -38,7 +38,7 @@
             </b-form-group>
           </b-col>
 
-          <b-col v-if="newAccount.type === 'Локальная'">
+          <b-col sm="12" md="6" lg="3" v-if="newAccount.type === 'Локальная'">
             <b-form-group label="Пароль">
               <b-form-input
                 v-model="newAccount.password"
@@ -49,7 +49,7 @@
             </b-form-group>
           </b-col>
 
-          <b-col class="align-self-end d-flex gap-2">
+          <b-col sm="12" class="align-self-end d-flex gap-2">
             <b-button variant="success" type="submit" :disabled="!isFormValid">Добавить</b-button>
             <b-button variant="secondary" @click="toggleForm">Отмена</b-button>
           </b-col>
@@ -59,8 +59,8 @@
 
     <div v-for="(account, index) in accounts" :key="index" class="mt-3">
       <b-form @submit.prevent="saveAccount(index)">
-        <b-row>
-          <b-col>
+        <b-row class="g-3">
+          <b-col sm="12" md="6" lg="3">
             <b-form-group label="Метка">
               <b-form-input
                 v-model="account.label"
@@ -71,25 +71,25 @@
             </b-form-group>
           </b-col>
 
-          <b-col>
+          <b-col sm="12" md="6" lg="3">
             <b-form-group label="Тип записи">
               <b-form-select v-model="account.type" :options="accountTypes" disabled />
             </b-form-group>
           </b-col>
 
-          <b-col>
+          <b-col sm="12" md="6" lg="3">
             <b-form-group label="Логин">
               <b-form-input v-model="account.login" placeholder="Логин" readonly />
             </b-form-group>
           </b-col>
 
-          <b-col v-if="account.type === 'Локальная'">
+          <b-col sm="12" md="6" lg="3" v-if="account.type === 'Локальная'">
             <b-form-group label="Пароль">
               <b-form-input v-model="account.password" placeholder="Пароль" type="password" readonly />
             </b-form-group>
           </b-col>
 
-          <b-col class="align-self-end">
+          <b-col sm="12" class="align-self-end">
             <b-button variant="danger" @click="deleteAccount(index)">Удалить</b-button>
           </b-col>
         </b-row>
@@ -213,6 +213,16 @@ i {
   }
   h1 {
     font-size: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .b-row {
+    display: block;
+  }
+  .b-col {
+    width: 100%;
+    margin-bottom: 15px;
   }
 }
 </style>
