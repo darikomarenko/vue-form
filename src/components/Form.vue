@@ -17,6 +17,7 @@
               <b-form-input
                 v-model="newAccount.label"
                 :state="isValid(newAccount.label)"
+                @blur="validateAccount(newAccount.label)"
                 placeholder="Метка (макс. 50 символов)"
                 maxlength="50"
               />
@@ -57,28 +58,29 @@
               <b-form-input
                 v-model="account.label"
                 :state="isValid(account.label)"
-                @blur="validateAccount(index)"
+                @blur="validateAccount(account.label, index)"
                 placeholder="Метка (макс. 50 символов)"
                 maxlength="50"
+                readonly
               />
             </b-form-group>
           </b-col>
 
           <b-col>
             <b-form-group label="Тип записи">
-              <b-form-select v-model="account.type" :options="accountTypes" @change="handleTypeChange(index)" />
+              <b-form-select v-model="account.type" :options="accountTypes" @change="handleTypeChange(index)" disabled />
             </b-form-group>
           </b-col>
 
           <b-col>
             <b-form-group label="Логин">
-              <b-form-input v-model="account.login" :state="isValid(account.login)" @blur="validateAccount(index)" placeholder="Логин" />
+              <b-form-input v-model="account.login" :state="isValid(account.login)" @blur="validateAccount(index)" placeholder="Логин" readonly />
             </b-form-group>
           </b-col>
 
           <b-col v-if="account.type === 'Локальная'">
             <b-form-group label="Пароль">
-              <b-form-input v-model="account.password" :state="isValid(account.password)" @blur="validateAccount(index)" placeholder="Пароль" type="password" />
+              <b-form-input v-model="account.password" :state="isValid(account.password)" @blur="validateAccount(index)" placeholder="Пароль" type="password" readonly />
             </b-form-group>
           </b-col>
 
@@ -92,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useAccountStore } from '../../stores/accountStore';
 import { BButton, BForm, BFormGroup, BFormInput, BFormSelect, BRow, BCol } from 'bootstrap-vue-next';
 
@@ -102,7 +104,7 @@ const accountTypes = [
 ];
 
 const accountStore = useAccountStore();
-const accounts = ref(accountStore.accounts);
+const accounts = computed(() => accountStore.accounts);
 
 const showForm = ref(false);
 const newAccount = ref({
@@ -116,11 +118,27 @@ const toggleForm = () => {
   showForm.value = !showForm.value;
 };
 
+const transformLabel = (label) => {
+  return label.split(';').map(part => part.trim()).join('; ');
+};
+
 const addNewAccount = () => {
   if (isValid(newAccount.value.label) && isValid(newAccount.value.login)) {
-    accountStore.addAccount(newAccount.value);
+    const account = {
+      ...newAccount.value,
+      label: transformLabel(newAccount.value.label)
+    };
+    accountStore.addAccount(account);
     newAccount.value = { label: '', type: 'LDAP', login: '', password: null };
     showForm.value = false;
+  }
+};
+
+const saveAccount = (index) => {
+  const account = accounts.value[index];
+  if (isValid(account.label) && isValid(account.login)) {
+    account.label = transformLabel(account.label);
+    accountStore.updateAccount(index, account);
   }
 };
 
@@ -135,6 +153,7 @@ const validateAccount = (index) => {
   const account = accounts.value[index];
   const isValid = account.login && (account.type === 'LDAP' || (account.type === 'Локальная' && account.password));
   if (isValid) {
+    account.label = transformLabel(account.label);
     accountStore.updateAccount(index, account);
   } else {
     account.label = '';
@@ -147,7 +166,10 @@ const deleteAccount = (index) => {
   accountStore.deleteAccount(index);
 };
 
-const isValid = (value) => {
+const isValid = (value, field) => {
+  if (field === 'login') {
+    return value && value.length <= 100;
+  }
   return value && value.length > 0;
 };
 </script>

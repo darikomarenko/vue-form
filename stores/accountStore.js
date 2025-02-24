@@ -14,5 +14,6 @@ export const useAccountStore = defineStore('accountStore', {
     deleteAccount(index) {
       this.accounts.splice(index, 1);
     }
-  }
+  },
+  persist: true
 });
