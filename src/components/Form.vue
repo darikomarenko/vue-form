@@ -16,8 +16,6 @@
             <b-form-group label="Метка">
               <b-form-input
                 v-model="newAccount.label"
-                :state="isValid(newAccount.label)"
-                @blur="validateAccount(newAccount.label)"
                 placeholder="Метка (макс. 50 символов)"
                 maxlength="50"
               />
@@ -32,18 +30,27 @@
 
           <b-col>
             <b-form-group label="Логин">
-              <b-form-input v-model="newAccount.login" :state="isValid(newAccount.login)" placeholder="Логин" />
+              <b-form-input
+                v-model="newAccount.login"
+                :state="isValid(newAccount.login, 'login')"
+                placeholder="Логин"
+              />
             </b-form-group>
           </b-col>
 
           <b-col v-if="newAccount.type === 'Локальная'">
             <b-form-group label="Пароль">
-              <b-form-input v-model="newAccount.password" :state="isValid(newAccount.password)" placeholder="Пароль" type="password" />
+              <b-form-input
+                v-model="newAccount.password"
+                :state="isValid(newAccount.password, 'password')"
+                placeholder="Пароль"
+                type="password"
+              />
             </b-form-group>
           </b-col>
 
-          <b-col class="text-center align-self-end d-flex gap-2">
-            <b-button variant="success" type="submit">Добавить</b-button>
+          <b-col class="align-self-end d-flex gap-2">
+            <b-button variant="success" type="submit" :disabled="!isFormValid">Добавить</b-button>
             <b-button variant="secondary" @click="toggleForm">Отмена</b-button>
           </b-col>
         </b-row>
@@ -57,8 +64,6 @@
             <b-form-group label="Метка">
               <b-form-input
                 v-model="account.label"
-                :state="isValid(account.label)"
-                @blur="validateAccount(account.label, index)"
                 placeholder="Метка (макс. 50 символов)"
                 maxlength="50"
                 readonly
@@ -68,23 +73,23 @@
 
           <b-col>
             <b-form-group label="Тип записи">
-              <b-form-select v-model="account.type" :options="accountTypes" @change="handleTypeChange(index)" disabled />
+              <b-form-select v-model="account.type" :options="accountTypes" disabled />
             </b-form-group>
           </b-col>
 
           <b-col>
             <b-form-group label="Логин">
-              <b-form-input v-model="account.login" :state="isValid(account.login)" @blur="validateAccount(index)" placeholder="Логин" readonly />
+              <b-form-input v-model="account.login" placeholder="Логин" readonly />
             </b-form-group>
           </b-col>
 
           <b-col v-if="account.type === 'Локальная'">
             <b-form-group label="Пароль">
-              <b-form-input v-model="account.password" :state="isValid(account.password)" @blur="validateAccount(index)" placeholder="Пароль" type="password" readonly />
+              <b-form-input v-model="account.password" placeholder="Пароль" type="password" readonly />
             </b-form-group>
           </b-col>
 
-          <b-col class="text-center align-self-end">
+          <b-col class="align-self-end">
             <b-button variant="danger" @click="deleteAccount(index)">Удалить</b-button>
           </b-col>
         </b-row>
@@ -93,10 +98,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useAccountStore } from '../../stores/accountStore';
 import { BButton, BForm, BFormGroup, BFormInput, BFormSelect, BRow, BCol } from 'bootstrap-vue-next';
+
+interface Account {
+  label: string;
+  type: 'LDAP' | 'Локальная';
+  login: string;
+  password: string;
+}
 
 const accountTypes = [
   { value: 'LDAP', text: 'LDAP' },
@@ -107,71 +119,58 @@ const accountStore = useAccountStore();
 const accounts = computed(() => accountStore.accounts);
 
 const showForm = ref(false);
-const newAccount = ref({
+const newAccount = ref<Account>({
   label: '',
   type: 'LDAP',
   login: '',
-  password: null
+  password: '',
 });
 
 const toggleForm = () => {
   showForm.value = !showForm.value;
 };
 
-const transformLabel = (label) => {
-  return label.split(';').map(part => part.trim()).join('; ');
+const transformLabel = (label: string): string[] => {
+  return label ? label.split(';').map(part => part.trim()) : [];
 };
 
 const addNewAccount = () => {
-  if (isValid(newAccount.value.label) && isValid(newAccount.value.login)) {
+  if (isFormValid.value) {
     const account = {
       ...newAccount.value,
-      label: transformLabel(newAccount.value.label)
+      label: transformLabel(newAccount.value.label).join(';') // Сохраняем обратно в строку
     };
     accountStore.addAccount(account);
-    newAccount.value = { label: '', type: 'LDAP', login: '', password: null };
+    newAccount.value = { label: '', type: 'LDAP', login: '', password: '' };
     showForm.value = false;
   }
 };
 
-const saveAccount = (index) => {
+const saveAccount = (index: number) => {
   const account = accounts.value[index];
-  if (isValid(account.label) && isValid(account.login)) {
-    account.label = transformLabel(account.label);
+  if (isValid(account.login, 'login')) {
+    account.label = transformLabel(account.label).join(';');
     accountStore.updateAccount(index, account);
   }
 };
 
-const handleTypeChange = (index) => {
-  const account = accounts.value[index];
-  if (account.type === 'LDAP') {
-    account.password = null;
-  }
-};
-
-const validateAccount = (index) => {
-  const account = accounts.value[index];
-  const isValid = account.login && (account.type === 'LDAP' || (account.type === 'Локальная' && account.password));
-  if (isValid) {
-    account.label = transformLabel(account.label);
-    accountStore.updateAccount(index, account);
-  } else {
-    account.label = '';
-    account.login = '';
-    account.password = null;
-  }
-};
-
-const deleteAccount = (index) => {
+const deleteAccount = (index: number) => {
   accountStore.deleteAccount(index);
 };
 
-const isValid = (value, field) => {
-  if (field === 'login') {
-    return value && value.length <= 100;
-  }
-  return value && value.length > 0;
+const isValid = (value: string | null, field?: string): boolean => {
+  if (!value) return field !== 'login' && field !== 'password';
+  if (field === 'login' || field === 'password') return value.length <= 100; 
+  if (field === 'label') return value.length <= 50;
+  return true;
 };
+
+const isFormValid = computed(() => {
+  return (
+    isValid(newAccount.value.login, 'login') &&
+    (newAccount.value.type !== 'Локальная' || isValid(newAccount.value.password, 'password'))
+  );
+});
 </script>
 
 <style scoped>
@@ -205,19 +204,6 @@ i {
     font-size: 12px;
     padding: 8px;
   }
-
-  .mt-2 {
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .text-center.align-self-end {
-    text-align: center;
-  }
-
-  .b-col {
-    padding: 0 8px;
-  }
 }
 
 @media (max-width: 425px) {
@@ -225,23 +211,8 @@ i {
     font-size: 10px;
     padding: 6px;
   }
-
   h1 {
     font-size: 18px;
-  }
-
-  .b-col {
-    padding: 0 4px;
-  }
-
-  .b-form-input,
-  .b-form-select {
-    font-size: 12px;
-  }
-
-  .b-button {
-    font-size: 12px;
-    padding: 5px 10px;
   }
 }
 </style>
