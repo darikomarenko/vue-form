@@ -1,13 +1,52 @@
 <template>
   <div class="container">
     <h1>Учетные записи</h1>
-    <b-button @click="addNewAccount" variant="primary">+</b-button>
+    <b-button @click="toggleForm" variant="primary">+</b-button>
 
-    <div class="message mt-2">
-      <span>
-        <i class="bi bi-question-circle"></i>
-        Для указания нескольких меток для одной пары логин/пароль используйте разделитель ;
-      </span>
+    <div v-if="showForm" class="mt-3">
+      <b-form @submit.prevent="addNewAccount">
+        <div class="message mt-2">
+          <span>
+            <i class="bi bi-question-circle"></i>
+            Для указания нескольких меток для одной пары логин/пароль используйте разделитель ;
+          </span>
+        </div>
+        <b-row>
+          <b-col>
+            <b-form-group label="Метка">
+              <b-form-input
+                v-model="newAccount.label"
+                :state="isValid(newAccount.label)"
+                placeholder="Метка (макс. 50 символов)"
+                maxlength="50"
+              />
+            </b-form-group>
+          </b-col>
+
+          <b-col>
+            <b-form-group label="Тип записи">
+              <b-form-select v-model="newAccount.type" :options="accountTypes" />
+            </b-form-group>
+          </b-col>
+
+          <b-col>
+            <b-form-group label="Логин">
+              <b-form-input v-model="newAccount.login" :state="isValid(newAccount.login)" placeholder="Логин" />
+            </b-form-group>
+          </b-col>
+
+          <b-col v-if="newAccount.type === 'Локальная'">
+            <b-form-group label="Пароль">
+              <b-form-input v-model="newAccount.password" :state="isValid(newAccount.password)" placeholder="Пароль" type="password" />
+            </b-form-group>
+          </b-col>
+
+          <b-col class="text-center align-self-end d-flex gap-2">
+            <b-button variant="success" type="submit">Добавить</b-button>
+            <b-button variant="secondary" @click="toggleForm">Отмена</b-button>
+          </b-col>
+        </b-row>
+      </b-form>
     </div>
 
     <div v-for="(account, index) in accounts" :key="index" class="mt-3">
@@ -15,7 +54,13 @@
         <b-row>
           <b-col>
             <b-form-group label="Метка">
-              <b-form-input v-model="account.label" :state="isValid(account.label)" @blur="validateAccount(index)" placeholder="Метка" />
+              <b-form-input
+                v-model="account.label"
+                :state="isValid(account.label)"
+                @blur="validateAccount(index)"
+                placeholder="Метка (макс. 50 символов)"
+                maxlength="50"
+              />
             </b-form-group>
           </b-col>
 
@@ -59,14 +104,24 @@ const accountTypes = [
 const accountStore = useAccountStore();
 const accounts = ref(accountStore.accounts);
 
+const showForm = ref(false);
+const newAccount = ref({
+  label: '',
+  type: 'LDAP',
+  login: '',
+  password: null
+});
+
+const toggleForm = () => {
+  showForm.value = !showForm.value;
+};
+
 const addNewAccount = () => {
-  const newAccount = {
-    label: '',
-    type: 'LDAP',
-    login: '',
-    password: null
-  };
-  accountStore.addAccount(newAccount);
+  if (isValid(newAccount.value.label) && isValid(newAccount.value.login)) {
+    accountStore.addAccount(newAccount.value);
+    newAccount.value = { label: '', type: 'LDAP', login: '', password: null };
+    showForm.value = false;
+  }
 };
 
 const handleTypeChange = (index) => {
@@ -78,12 +133,10 @@ const handleTypeChange = (index) => {
 
 const validateAccount = (index) => {
   const account = accounts.value[index];
-
   const isValid = account.login && (account.type === 'LDAP' || (account.type === 'Локальная' && account.password));
   if (isValid) {
     accountStore.updateAccount(index, account);
   } else {
-
     account.label = '';
     account.login = '';
     account.password = null;
@@ -111,6 +164,8 @@ const isValid = (value) => {
   border: 1px solid #ddd;
   padding: 10px;
   border-radius: 5px;
+  max-width: 50vw;
+  margin-bottom: 5px;
 }
 
 span {
