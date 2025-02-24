@@ -2,7 +2,14 @@
   <div class="container">
     <h1>Учетные записи</h1>
     <b-button @click="addNewAccount" variant="primary">+</b-button>
-    
+
+    <div class="message mt-2">
+      <span>
+        <i class="bi bi-question-circle"></i>
+        Для указания нескольких меток для одной пары логин/пароль используйте разделитель ;
+      </span>
+    </div>
+
     <div v-for="(account, index) in accounts" :key="index" class="mt-3">
       <b-form @submit.prevent="saveAccount(index)">
         <b-row>
@@ -29,7 +36,7 @@
               <b-form-input v-model="account.password" :state="isValid(account.password)" @blur="validateAccount(index)" placeholder="Пароль" type="password" />
             </b-form-group>
           </b-col>
-          
+
           <b-col class="text-center align-self-end">
             <b-button variant="danger" @click="deleteAccount(index)">Удалить</b-button>
           </b-col>
@@ -41,7 +48,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useAccountStore } from '../../stores/accountStore.js';
+import { useAccountStore } from '../../stores/accountStore';
 import { BButton, BForm, BFormGroup, BFormInput, BFormSelect, BRow, BCol } from 'bootstrap-vue-next';
 
 const accountTypes = [
@@ -71,10 +78,12 @@ const handleTypeChange = (index) => {
 
 const validateAccount = (index) => {
   const account = accounts.value[index];
+
   const isValid = account.login && (account.type === 'LDAP' || (account.type === 'Локальная' && account.password));
   if (isValid) {
     accountStore.updateAccount(index, account);
   } else {
+
     account.label = '';
     account.login = '';
     account.password = null;
@@ -91,5 +100,71 @@ const isValid = (value) => {
 </script>
 
 <style scoped>
-/* styles */
+.mt-2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+span {
+  font-size: 14px;
+  color: #555;
+}
+
+i {
+  font-size: 18px;
+  color: #007bff;
+}
+
+@media (max-width: 768px) {
+  .message {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .mt-2 {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .text-center.align-self-end {
+    text-align: center;
+  }
+
+  .b-col {
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 425px) {
+  .message {
+    font-size: 10px;
+    padding: 6px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .b-col {
+    padding: 0 4px;
+  }
+
+  .b-form-input,
+  .b-form-select {
+    font-size: 12px;
+  }
+
+  .b-button {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+}
 </style>

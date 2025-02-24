@@ -3,7 +3,7 @@ import Form from './components/Form.vue'
 </script>
 
 <template>
-  <Form msg="Form" />
+  <Form />
 </template>
 
 <style scoped>
